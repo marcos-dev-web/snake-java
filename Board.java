@@ -34,7 +34,8 @@ public class Board extends JPanel implements ActionListener {
     private final int DOT_SIZE = 10;
     private final int ALL_DOTS = 900;
     private final int RAND_POS = 29;
-    private final int DELAY = 140;
+
+    private int FPS;
 
     private final int x[] = new int[ALL_DOTS];
     private final int y[] = new int[ALL_DOTS];
@@ -54,43 +55,40 @@ public class Board extends JPanel implements ActionListener {
     private Image apple;
     private Image head;
 
-    public Board() { //constructor
+    public Board() {
         initBoard();
-    }
-
-    private void playSound(String path) {
-        URL url = this.getClass().getClassLoader().getResource(path);
-        try {
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(url);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioIn);
-            clip.stop();
-            clip.setFramePosition(0);
-            clip.start();
-        } catch(UnsupportedAudioFileException e) {
-            e.printStackTrace();
-        } catch(IOException e) {
-            e.printStackTrace();
-        } catch (LineUnavailableException e) {
-            e.printStackTrace();
-         }
     }
 
     private void initBoard() {
         
         playSound("./src/res/sounds/init.wav");
+        FPS = 100;
 
         addKeyListener(new TAdapter());
         setBackground(Color.black);
-        setFocusable(true); // has focus
+        setFocusable(true);
 
-        setPreferredSize(new Dimension(B_WIDTH, B_HEIGHT)); //width panel is the width window
-        loadImages();
+        setPreferredSize(new Dimension(B_WIDTH, B_HEIGHT));
         initGame();
     }
 
+    private void initGame() {
+        inGame = true;
+        dots = 3;
+
+        for (int z = 0; z < dots; z++) {
+            x[z] = 50 - z * 10;
+            y[z] = 50;
+        }
+
+        locateApple();
+        loadImages();
+
+        timer = new Timer(FPS, this);
+        timer.start();
+    }
+    
     private void loadImages() {
-        //loading images
         ImageIcon iid = new ImageIcon("src/res/body.png");
         ball = iid.getImage();
 
@@ -99,22 +97,6 @@ public class Board extends JPanel implements ActionListener {
 
         ImageIcon iih = new ImageIcon("src/res/head.png");
         head = iih.getImage();
-
-    }
-
-    private void initGame() {
-        inGame = true;
-        dots = 3; //initial length snake
-
-        for (int z = 0; z < dots; z++) {
-            x[z] = 50 - z * 10;
-            y[z] = 50;
-        }
-
-        locateApple();
-
-        timer = new Timer(DELAY, this);
-        timer.start();
     }
 
     @Override
@@ -124,10 +106,28 @@ public class Board extends JPanel implements ActionListener {
         doDrawing(g);
     }
 
-    private void doDrawing(Graphics g) {
-        if (inGame) { //if game has running
-            g.drawImage(apple, apple_x, apple_y, this);
+    private void playSound(String path) {
+        URL url = this.getClass().getClassLoader().getResource(path);
+        try {
+            Clip clip = AudioSystem.getClip();
+            AudioInputStream audio = AudioSystem.getAudioInputStream(url);
+            clip.open(audio);
+            clip.stop();
+            clip.setFramePosition(0);
+            clip.start();
+        } catch(UnsupportedAudioFileException e) {
+            e.printStackTrace();
+        } catch(IOException e) {
+            e.printStackTrace();
+        } catch (LineUnavailableException e) {
+            e.printStackTrace();
+        }
+    }
 
+    private void doDrawing(Graphics g) {
+        if (inGame) {
+            g.drawImage(apple, apple_x, apple_y, this);
+            
             for (int z = 0; z < dots; z++) {
                 if (z == 0) {
                     g.drawImage(head, x[z], y[z], this);
@@ -145,7 +145,7 @@ public class Board extends JPanel implements ActionListener {
     private void gameOver(Graphics g) {
         ArrayList<String> frases = new ArrayList<String>();
         frases.add("Game Over");
-        frases.add("MAX: "+(dots-3));
+        frases.add("MAX: "+dots);
         frases.add("Press Enter to Restart game");
 
         for (int i = 0; i < frases.size(); i++) {
@@ -156,8 +156,6 @@ public class Board extends JPanel implements ActionListener {
             g.setFont(font);
             g.drawString(frases.get(i), (B_WIDTH - metr.stringWidth(frases.get(i))) / 2, (B_HEIGHT / 2) + (-30 * (frases.size() - (i+1))));
         }
-       
-        
 
         playSound("./src/res/sounds/loser.wav");
     }
@@ -168,6 +166,9 @@ public class Board extends JPanel implements ActionListener {
             locateApple();
             if ((float) dots / 10 % 2 == 1.0f || (float) dots / 10 % 2 == 0.0f) {
                 playSound("./src/res/sounds/new.wav");
+                if (FPS > 0) {
+                  FPS -= 5;
+                }
             } else {
                 playSound("./src/res/sounds/plus.wav");
             }
@@ -282,5 +283,3 @@ public class Board extends JPanel implements ActionListener {
         }
     }
 }
-
-

@@ -10,7 +10,8 @@ public class Snake extends JFrame {
     }
 
     private void initUI() {
-        add(new Board());
+        Board board = new Board();
+        add(board);
         setResizable(false);
         pack();
 
